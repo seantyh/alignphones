@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from praatio import textgrid
 from praatio.utilities.constants import Interval
 
@@ -20,35 +20,39 @@ def make_textgrid_align_tree(
     return entries
 
 def make_textgrid_emit_frames(
-        frames: EmitFrames, 
-        allo_ipas: List[str]
+        frames: EmitFrames
     ):
     entries = []
     for i in range(len(frames)):
         start = frames[i].offset_s        
         end = frames[i].end   # type: ignore
-        if frames[i].phone_token == "<blk>":
-            phone_token = "[{}]".format(extract_dark_phones(frames[i].phone_logits, allo_ipas))
-        else:
-            phone_token = frames[i].phone_token
-        entries.append((start, end, phone_token))
+        label = frames[i].label # type: ignore
+        entries.append((start, end, label))
     return entries
 
 def write_textgrid(
         tg_path: str, 
-        char_tree: AlignNode, 
-        epiphone_tree: AlignNode, 
-        frames: EmitFrames, 
-        allo_ipas: List[str], 
         minT: float, 
-        maxT: float):
+        maxT: float,
+        frames: EmitFrames, 
+        epiphone_tree: AlignNode, 
+        char_tree: AlignNode,         
+        utt_tree: Optional[AlignNode] = None,
+    ):
 
-    tier_aligned_chars = make_textgrid_align_tree(char_tree.children)
-    tier_aligned_phones = make_textgrid_align_tree(epiphone_tree.children)
-    tier_raw_entries = make_textgrid_emit_frames(frames, allo_ipas)
-
-    tg = textgrid.Textgrid()    
-    tg.addTier(textgrid.IntervalTier("characs", entryList=tier_aligned_chars, minT=minT, maxT=maxT))
-    tg.addTier(textgrid.IntervalTier("phones", entryList=tier_aligned_phones, minT=minT, maxT=maxT))
+    tg = textgrid.Textgrid()
+    tier_raw_entries = make_textgrid_emit_frames(frames)
     tg.addTier(textgrid.IntervalTier("alloframe", entryList=tier_raw_entries, minT=minT, maxT=maxT))
+    if epiphone_tree:
+        tier_aligned_phones = make_textgrid_align_tree(epiphone_tree.children)
+        tg.addTier(textgrid.IntervalTier("phones", entryList=tier_aligned_phones, minT=minT, maxT=maxT))
+    
+    if char_tree:
+        tier_aligned_chars = make_textgrid_align_tree(char_tree.children)
+        tg.addTier(textgrid.IntervalTier("characs", entryList=tier_aligned_chars, minT=minT, maxT=maxT))        
+
+    if utt_tree:
+        tier_aligned_utt = make_textgrid_align_tree(utt_tree.children)
+        tg.addTier(textgrid.IntervalTier("characs", entryList=tier_aligned_utt, minT=minT, maxT=maxT))                            
+    
     tg.save(tg_path, format="short_textgrid", includeBlankSpaces=False)

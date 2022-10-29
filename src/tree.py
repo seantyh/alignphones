@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union
 from enum import Enum, auto
 
 from .align import AlignedEntry
@@ -18,19 +18,31 @@ class AlignNode:
     frame_start: Optional[float] = None
     frame_end: Optional[float] = None
 
+    def __iadd__(self, other: "AlignNode"):
+        if not isinstance(other, AlignNode):
+            raise TypeError("AlignNode expected")
+        if self == other:
+            raise ValueError("Add to itself")
+        self.children.extend(other.children)
+        return self
+
     @property
-    def start(self):
+    def start(self) -> Union[float, None]:
         if not self.frame_start:       
-            chd = self.children
-            return (chd and chd[0].start) or None
+            starts = [x.start
+                      for x in self.children
+                      if x.start]
+            return starts[0] if starts else None
         else:
             return self.frame_start
     
     @property
-    def end(self):
+    def end(self) -> Union[float, None]:
         if not self.frame_end:
-            chd = self.children
-            return (chd and chd[-1].end) or None
+            ends = [x.end
+                      for x in self.children
+                      if x.end]
+            return ends[0] if ends else None
         else:
             return self.frame_end        
         
