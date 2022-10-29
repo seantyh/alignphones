@@ -2,11 +2,10 @@ from typing import List, Optional
 from praatio import textgrid
 from praatio.utilities.constants import Interval
 
-from alignphones.src.align import EmitFrames
+from .align import EmitFrames
 
 from .tree import AlignNode
 from .utils import extract_dark_phones
-from typing import Tuple
 
 def make_textgrid_align_tree(
         nodes: List[AlignNode]

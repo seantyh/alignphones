@@ -3,13 +3,13 @@ from dataclasses import dataclass
 import numpy as np
 from webvtt import Caption
 from . import tree
-from .tree import AlignNode
-from .utils import AlignContext, extract_dark_phones
-from .align import EmitFrames
 from . import textgrids as tg
 from . import align
 from . import seq_algorithm as seqalgo
 from . import utils
+from .tree import AlignNode
+from .utils import AlignContext, extract_dark_phones
+from .align import EmitFrames
 
 @dataclass
 class AlignResult:    
