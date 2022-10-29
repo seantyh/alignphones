@@ -1,18 +1,25 @@
 from typing import List
 from praatio import textgrid
-from .paths import AlignedEntries, EmitFrames
-from .utils import extract_dark_phones
+from praatio.utilities.constants import Interval
 
-def make_aligned_textgrid(aligned_entries: AlignedEntries):        
+from alignphones.src.align import EmitFrames
+
+from .tree import AlignNode
+from .utils import extract_dark_phones
+from typing import Tuple
+
+def make_textgrid_align_tree(
+        nodes: List[AlignNode]
+    ) -> List[Interval]:  
+    
     entries = []
-    for label_x, frames_x in aligned_entries:                
-        if not frames_x: continue
-        start = frames_x[0].offset_s    
-        end = frames_x[-1].end  # type: ignore
-        entries.append((start, end, label_x))        
+
+    for node_x in nodes:                
+        if not (node_x.start and node_x.end): continue        
+        entries.append((node_x.start, node_x.end, node_x.label))        
     return entries
 
-def make_raw_textgrid(
+def make_textgrid_emit_frames(
         frames: EmitFrames, 
         allo_ipas: List[str]
     ):
@@ -29,16 +36,16 @@ def make_raw_textgrid(
 
 def write_textgrid(
         tg_path: str, 
-        aligned_chars: AlignedEntries, 
-        aligned_phones: AlignedEntries, 
+        char_tree: AlignNode, 
+        epiphone_tree: AlignNode, 
         frames: EmitFrames, 
         allo_ipas: List[str], 
         minT: float, 
         maxT: float):
 
-    tier_aligned_chars = make_aligned_textgrid(aligned_chars)
-    tier_aligned_phones = make_aligned_textgrid(aligned_phones)
-    tier_raw_entries = make_raw_textgrid(frames, allo_ipas)
+    tier_aligned_chars = make_textgrid_align_tree(char_tree.children)
+    tier_aligned_phones = make_textgrid_align_tree(epiphone_tree.children)
+    tier_raw_entries = make_textgrid_emit_frames(frames, allo_ipas)
 
     tg = textgrid.Textgrid()    
     tg.addTier(textgrid.IntervalTier("characs", entryList=tier_aligned_chars, minT=minT, maxT=maxT))
