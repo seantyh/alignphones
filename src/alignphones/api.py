@@ -34,7 +34,8 @@ class AlignResult:
 def align_vtt(
         vtt: List[Caption],
         frames: EmitFrames,
-        context:AlignContext
+        context:AlignContext,
+        progress_bar: bool=True
     ) -> AlignResult:
 
     # `session` indicates the whole vtt (such as the whole wave file)
@@ -43,7 +44,11 @@ def align_vtt(
     session_align_chars = tree.create_node(AlignNodeType.Utterance)
     session_align_utts = tree.create_node(AlignNodeType.Root)
 
-    for vtt_x in tqdm(vtt):
+    if progress_bar:
+        vtt_iter = tqdm(iter(vtt))
+    else:
+        vtt_iter = iter(vtt)
+    for vtt_x in vtt_iter:
         try:
             vtt_start = utils.to_seconds(vtt_x.start)
             vtt_end = utils.to_seconds(vtt_x.end)
@@ -59,7 +64,8 @@ def align_vtt(
             session_align_epi_phones += align_result.align_epi_phones
             session_frames.extend(frames_part)
         except Exception as ex:
-            print(ex)
+            pass
+            # print(ex)
         
 
     return AlignResult(session_frames,
