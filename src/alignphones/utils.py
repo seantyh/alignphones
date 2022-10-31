@@ -1,7 +1,7 @@
 import numpy as np
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Union
 from types import MethodType
 from panphon import FeatureTable
 from dataclasses import dataclass
@@ -16,8 +16,8 @@ class AlignContext:
 
 def createContext() -> AlignContext:
     # globals
-    ipa_text_path = Path(__file__).parent / Path("../data/allosaurus_ipas.txt")
-    cedict_path = Path(__file__).parent / Path("../data/cedict_1_0_ts_utf-8_mdbg.txt")
+    ipa_text_path = Path(__file__).parent / Path("../../data/allosaurus_ipas.txt")
+    cedict_path = Path(__file__).parent / Path("../../data/cedict_1_0_ts_utf-8_mdbg.txt")
     allo_ipas = ipa_text_path.read_text(encoding="UTF-8").split()
     ft = FeatureTable()   
     epi = Epitran('cmn-Hant', cedict_file=str(cedict_path))  # type: ignore
@@ -28,10 +28,14 @@ def createContext() -> AlignContext:
 def softmax(x):
     return np.exp(x)/np.exp(x).sum(axis=1)[:,np.newaxis]
 
-def to_seconds(time_str):
-    ref = datetime(1900,1,1)
-    delta = datetime.strptime(time_str, "%H:%M:%S.%f")-ref
-    return delta.seconds + delta.microseconds/1000000
+def to_seconds(time_str: Union[int, float, str]):
+    if (isinstance(time_str, float) or 
+        isinstance(time_str, int)):
+        return time_str
+    else:            
+        ref = datetime(1900,1,1)
+        delta = datetime.strptime(time_str, "%H:%M:%S.%f")-ref
+        return delta.seconds + delta.microseconds/1000000
 
 #https://github.com/dmort27/epitran/blob/a30eef02327af0f5f1d161fa427f9e56545b3b64/epitran/epihan.py
 def transliterate_char(self, text):

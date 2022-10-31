@@ -52,6 +52,6 @@ def write_textgrid(
 
     if utt_tree:
         tier_aligned_utt = make_textgrid_align_tree(utt_tree.children)
-        tg.addTier(textgrid.IntervalTier("characs", entryList=tier_aligned_utt, minT=minT, maxT=maxT))                            
+        tg.addTier(textgrid.IntervalTier("utterances", entryList=tier_aligned_utt, minT=minT, maxT=maxT))                            
     
     tg.save(tg_path, format="short_textgrid", includeBlankSpaces=False)

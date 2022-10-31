@@ -1,10 +1,11 @@
 from itertools import groupby
+import math
 from typing import Tuple, List
 from epitran import Epitran
 from panphon import FeatureTable
 from allosaurus.emit_frame import EmitFrameInfo
 from .seq_algorithm import BacktrackTable, TrellisLoc, AlignPath
-from .tree import AlignNode, AlignNodeType, create_root
+from .tree import AlignNode, AlignNodeType, create_node
 from . import tree as tree
 
 EmitFrames = List[EmitFrameInfo]
@@ -23,7 +24,7 @@ def create_path(init_point: TrellisLoc, backtrack: BacktrackTable):
             buf.append(prev_point)
     return path[::-1]
 
-def align_transcript(
+def align_characters(
         transcript: str,
         epi_nodes: List[AlignNode],
         ft: FeatureTable,
@@ -31,17 +32,18 @@ def align_transcript(
     ) -> AlignNode:
     
     cursor = 0
-    root = tree.create_root()    
+    root = tree.create_node(AlignNodeType.Utterance)
     for ch_idx, ch_ipas in enumerate(epi.transliterate_char(transcript)): # type: ignore
         char_phones_x = ft.ipa_segs(ch_ipas)
         first_phone_i = cursor
-        last_phone_i = cursor+len(char_phones_x)+1        
+        last_phone_i = cursor+len(char_phones_x)        
         char_node = AlignNode(
             AlignNodeType.Character,
             transcript[ch_idx],
             epi_nodes[first_phone_i: last_phone_i]
-            )
+            )        
         root.children.append(char_node)        
+        cursor += len(char_phones_x)
     return root
     
 def align_epi_phones(
@@ -53,16 +55,16 @@ def align_epi_phones(
     label_spans = groupby(paths, key=lambda x: x[1])
     aligned = []
     last_frame_i = -1
-    root = create_root()
-
+    root = create_node(AlignNodeType.Character)
+    
     for epi_id, paths_x in label_spans:
         epi_phone_x = epi_phones[epi_id]
         paths_x = list(paths_x)
         # print(label_id, paths_x)
-        start_frame_i = paths_x[0][0]
+        start_frame_i = max(last_frame_i+1, paths_x[0][0])
         end_frame_i = paths_x[-1][0]
 
-        if last_frame_i == start_frame_i:
+        if start_frame_i > end_frame_i:
             # skip duplicate frames, i.e. dropping labels
             empty_node = AlignNode(
                 AlignNodeType.EpiPhone,
@@ -89,5 +91,5 @@ def align_epi_phones(
             )
             root.children.append(phone_node)
 
-        last_frame_i = start_frame_i
+        last_frame_i = end_frame_i
     return root
