@@ -48,8 +48,8 @@ def compute_trellis(prob_mat,
     trellis = np.zeros((M, N))
     trellis[0,:] = np.arange(N)
     trellis[:,0] = np.arange(M)    
-    backtrack: BacktrackTable = {(0,i): ((0,i-1),i) for i in range(1,M)}
-    backtrack.update({(j,0): ((j-1,0),j) for j in range(1,N)})
+    backtrack: BacktrackTable = {(i, 0): ((i-1, 0),i) for i in range(1,M)}
+    backtrack.update({(0,j): ((0,j-1),j) for j in range(1,N)})
     for j in range(1,N):
         mu_j = -np.log(compute_scores(prob_mat, epi_phones[j], ft, allo_ipas))
         for i in range(1,M):
